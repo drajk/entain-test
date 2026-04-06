@@ -114,3 +114,21 @@ go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway git
 - [Google API Design](https://cloud.google.com/apis/design)
 - [Go Modules](https://golang.org/ref/mod)
 - [Ubers Go Style Guide](https://github.com/uber-go/guide/blob/2910ce2e11d0e0cba2cece2c60ae45e3a984ffe5/style.md)
+
+### Local Developement
+
+Added a `Makefile` and `.vscode/launch.json` to speed things up for local developement.
+
+**Make targets:**
+
+```
+make build      # builds both binaries
+make run        # spins up both services (backgrounded)
+make test       # runs tests across all services
+make proto      # re-generates proto files
+make clean      # removes built binaries
+```
+
+**Debugging (VS Code):**
+
+Hit ⇧⌘D and pick `Racing Service`, `API Gateway`, or `All Services` to launch in debug mode with breakpoints.
