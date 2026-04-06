@@ -1,7 +1,11 @@
 package db
 
 import (
+	"database/sql"
 	"testing"
+	"time"
+
+	_ "github.com/mattn/go-sqlite3"
 
 	"git.neds.sh/matty/entain/racing/proto/racing"
 	"github.com/stretchr/testify/assert"
@@ -114,4 +118,22 @@ func TestApplyFilter_Ordering(t *testing.T) {
 			assert.Equal(t, tt.expectedQuery, q)
 		})
 	}
+}
+
+func TestList_DerivedStatus(t *testing.T) {
+	// set up in-memory DB with some test data
+	db, _ := sql.Open("sqlite3", ":memory:")
+
+	db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
+	db.Exec(`INSERT INTO races VALUES (1,1,'Past Race',1,1,?)`, time.Now().Add(-1*time.Hour).Format(time.RFC3339))
+	db.Exec(`INSERT INTO races VALUES (2,1,'Future Race',1,1,?)`, time.Now().Add(1*time.Hour).Format(time.RFC3339))
+
+	repo := &racesRepo{db: db}
+	races, err := repo.List(&racing.ListRacesRequestFilter{})
+	assert.NoError(t, err)
+	assert.Len(t, races, 2)
+
+	// First race is past → CLOSED, second is future → OPEN (default order is by advertised_start_time ASC)
+	assert.Equal(t, racing.RaceStatus_CLOSED, races[0].Status)
+	assert.Equal(t, racing.RaceStatus_OPEN, races[1].Status)
 }
