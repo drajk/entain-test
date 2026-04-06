@@ -2,6 +2,7 @@ package db
 
 import (
 	"database/sql"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -10,6 +11,20 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 
 	"git.neds.sh/matty/entain/racing/proto/racing"
+)
+
+// sortable columns — anything not in here gets rejected
+var allowedSortFields = map[string]bool{
+	"id":                    true,
+	"meeting_id":            true,
+	"name":                  true,
+	"number":                true,
+	"advertised_start_time": true,
+}
+
+const (
+	defaultSortField     = "advertised_start_time"
+	defaultSortDirection = "ASC"
 )
 
 // RacesRepo provides repository access to races.
@@ -52,7 +67,10 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 
 	query = getRaceQueries()[racesList]
 
-	query, args = r.applyFilter(query, filter)
+	query, args, err = r.applyFilter(query, filter)
+	if err != nil {
+		return nil, err
+	}
 
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
@@ -62,14 +80,14 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 	return r.scanRaces(rows)
 }
 
-func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}) {
+func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}, error) {
 	var (
 		clauses []string
 		args    []interface{}
 	)
 
 	if filter == nil {
-		return query, args
+		return query + " ORDER BY " + defaultSortField + " " + defaultSortDirection, args, nil
 	}
 
 	if len(filter.MeetingIds) > 0 {
@@ -88,7 +106,36 @@ func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFil
 		query += " WHERE " + strings.Join(clauses, " AND ")
 	}
 
-	return query, args
+	query, err := applyOrdering(query, filter)
+	if err != nil {
+		return query, args, err
+	}
+
+	return query, args, nil
+}
+
+// applyOrdering appends ORDER BY to the query. Defaults to advertised_start_time ASC.
+// Validation lives here for now, but in a larger system this would sit in the service layer.
+func applyOrdering(query string, filter *racing.ListRacesRequestFilter) (string, error) {
+	field := defaultSortField
+	direction := defaultSortDirection
+
+	if filter.SortBy != "" {
+		if !allowedSortFields[filter.SortBy] {
+			allowed := make([]string, 0, len(allowedSortFields))
+			for k := range allowedSortFields {
+				allowed = append(allowed, k)
+			}
+			return "", fmt.Errorf("invalid sort field: %s, allowed: %v", filter.SortBy, allowed)
+		}
+		field = filter.SortBy
+	}
+
+	if filter.SortDirection == racing.SortDirection_DESC {
+		direction = "DESC"
+	}
+
+	return query + " ORDER BY " + field + " " + direction, nil
 }
 
 func (m *racesRepo) scanRaces(

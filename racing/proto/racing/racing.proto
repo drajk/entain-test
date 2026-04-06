@@ -21,11 +21,23 @@ message ListRacesResponse {
   repeated Race races = 1;
 }
 
+// Sort direction for ordering results.
+enum SortDirection {
+  // Ascending order (default).
+  ASC = 0;
+  // Descending order.
+  DESC = 1;
+}
+
 // Filter for listing races.
 message ListRacesRequestFilter {
   repeated int64 meeting_ids = 1;
   // When true, only visible races are returned. Default returns all.
   bool visible_only = 2;
+  // Field to sort by. Defaults to advertised_start_time if unset.
+  string sort_by = 3;
+  // Sort direction. Defaults to ASC.
+  SortDirection sort_direction = 4;
 }
 
 /* Resources */
