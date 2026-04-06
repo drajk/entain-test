@@ -12,6 +12,7 @@ import (
 )
 
 // mockRacesRepo is a minimal stub that implements RacesRepo.
+// minimal service layer tests, making sure we did not break the contract between service and repo.
 type mockRacesRepo struct {
 	races []*racing.Race
 }
