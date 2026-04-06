@@ -6,14 +6,22 @@ option go_package = "/racing";
 import "google/protobuf/timestamp.proto";
 
 service Racing {
-  // ListRaces will return a collection of all races.
+  // ListRaces returns a collection of all races.
   rpc ListRaces(ListRacesRequest) returns (ListRacesResponse) {}
+  // GetRace returns a single race by ID.
+  rpc GetRace(GetRaceRequest) returns (Race) {}
 }
 
 /* Requests/Responses */
 
 message ListRacesRequest {
   ListRacesRequestFilter filter = 1;
+}
+
+// Request to fetch a single race.
+message GetRaceRequest {
+  // The ID of the race to retrieve.
+  int64 id = 1;
 }
 
 // Response to ListRaces call.
