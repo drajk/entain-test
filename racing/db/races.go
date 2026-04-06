@@ -13,7 +13,7 @@ import (
 	"git.neds.sh/matty/entain/racing/proto/racing"
 )
 
-// sortable columns — anything not in here gets rejected
+// sortable columns, anything not in here gets rejected
 var allowedSortFields = map[string]bool{
 	"id":                    true,
 	"meeting_id":            true,
@@ -34,6 +34,9 @@ type RacesRepo interface {
 
 	// List will return a list of races.
 	List(filter *racing.ListRacesRequestFilter) ([]*racing.Race, error)
+
+	// Get returns a single race by ID.
+	Get(id int64) (*racing.Race, error)
 }
 
 type racesRepo struct {
@@ -72,12 +75,32 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 		return nil, err
 	}
 
+	// TODO: swap to QueryContext(ctx, ...) once ctx is threaded through the repo interface.
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
 
 	return r.scanRaces(rows)
+}
+
+func (r *racesRepo) Get(id int64) (*racing.Race, error) {
+	// Same TODO as List, would benefit from ctx for timeouts/cancellation.
+	rows, err := r.db.Query(getRaceQueries()[racesGet], id)
+	if err != nil {
+		return nil, err
+	}
+
+	races, err := r.scanRaces(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(races) == 0 {
+		return nil, fmt.Errorf("race with id %d not found", id)
+	}
+
+	return races[0], nil
 }
 
 func (r *racesRepo) applyFilter(query string, filter *racing.ListRacesRequestFilter) (string, []interface{}, error) {

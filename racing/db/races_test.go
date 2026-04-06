@@ -137,3 +137,26 @@ func TestList_DerivedStatus(t *testing.T) {
 	assert.Equal(t, racing.RaceStatus_CLOSED, races[0].Status)
 	assert.Equal(t, racing.RaceStatus_OPEN, races[1].Status)
 }
+
+func TestGet_Found(t *testing.T) {
+	db, _ := sql.Open("sqlite3", ":memory:")
+	db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
+	db.Exec(`INSERT INTO races VALUES (1,1,'Test Race',3,1,?)`, time.Now().Add(1*time.Hour).Format(time.RFC3339))
+
+	repo := &racesRepo{db: db}
+	race, err := repo.Get(1)
+	assert.NoError(t, err)
+	assert.Equal(t, int64(1), race.Id)
+	assert.Equal(t, "Test Race", race.Name)
+}
+
+func TestGet_NotFound(t *testing.T) {
+	db, _ := sql.Open("sqlite3", ":memory:")
+	db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
+
+	repo := &racesRepo{db: db}
+	race, err := repo.Get(999)
+	assert.Nil(t, race)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not found")
+}

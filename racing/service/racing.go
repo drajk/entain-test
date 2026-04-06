@@ -4,11 +4,15 @@ import (
 	"git.neds.sh/matty/entain/racing/db"
 	"git.neds.sh/matty/entain/racing/proto/racing"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Racing interface {
 	// ListRaces will return a collection of races.
 	ListRaces(ctx context.Context, in *racing.ListRacesRequest) (*racing.ListRacesResponse, error)
+	// GetRace returns a single race by ID.
+	GetRace(ctx context.Context, in *racing.GetRaceRequest) (*racing.Race, error)
 }
 
 // racingService implements the Racing interface.
@@ -28,4 +32,14 @@ func (s *racingService) ListRaces(ctx context.Context, in *racing.ListRacesReque
 	}
 
 	return &racing.ListRacesResponse{Races: races}, nil
+}
+
+func (s *racingService) GetRace(ctx context.Context, in *racing.GetRaceRequest) (*racing.Race, error) {
+	race, err := s.racesRepo.Get(in.Id)
+	if err != nil {
+		// Returns as NotFound so the gateway returns 404, not 500.
+		return nil, status.Errorf(codes.NotFound, err.Error())
+	}
+	
+	return race, nil
 }
