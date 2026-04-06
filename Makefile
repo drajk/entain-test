@@ -1,4 +1,4 @@
-.PHONY: build run run-racing run-api proto-racing proto-api proto clean
+.PHONY: build run run-racing run-api proto-racing proto-api proto clean test
 
 build:
 	cd racing && go build -o racing .
@@ -22,3 +22,6 @@ proto: proto-racing proto-api
 
 clean:
 	rm -f racing/racing api/api
+
+test:
+	cd racing && go test ./... -v
