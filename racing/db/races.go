@@ -13,7 +13,7 @@ import (
 	"git.neds.sh/matty/entain/racing/proto/racing"
 )
 
-// sortable columns — anything not in here gets rejected
+// sortable columns, anything not in here gets rejected
 var allowedSortFields = map[string]bool{
 	"id":                    true,
 	"meeting_id":            true,
@@ -75,6 +75,7 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 		return nil, err
 	}
 
+	// TODO: swap to QueryContext(ctx, ...) once ctx is threaded through the repo interface.
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -84,6 +85,7 @@ func (r *racesRepo) List(filter *racing.ListRacesRequestFilter) ([]*racing.Race,
 }
 
 func (r *racesRepo) Get(id int64) (*racing.Race, error) {
+	// Same TODO as List, would benefit from ctx for timeouts/cancellation.
 	rows, err := r.db.Query(getRaceQueries()[racesGet], id)
 	if err != nil {
 		return nil, err
