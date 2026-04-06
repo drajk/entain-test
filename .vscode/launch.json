@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Racing Service",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/racing/main.go",
+      "cwd": "${workspaceFolder}/racing"
+    },
+    {
+      "name": "API Gateway",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/api/main.go",
+      "cwd": "${workspaceFolder}/api"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "All Services",
+      "configurations": ["Racing Service", "API Gateway"]
+    }
+  ]
+}
