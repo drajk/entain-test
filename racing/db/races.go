@@ -162,6 +162,12 @@ func (m *racesRepo) scanRaces(
 
 		race.AdvertisedStartTime = ts
 
+		// Derive status at read time, simplest and always accurate.
+		// Could also live in the service layer or be stored in DB, this was the simplest option for this example.
+		if advertisedStart.Before(time.Now()) {
+			race.Status = racing.RaceStatus_CLOSED
+		}
+
 		races = append(races, &race)
 	}
 
