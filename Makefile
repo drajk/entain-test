@@ -1,4 +1,6 @@
-.PHONY: build run run-racing run-api proto-racing proto-api proto clean test
+.PHONY: build run run-racing run-api proto-racing proto-api proto clean test kill
+
+export PATH := $(PATH):$(shell go env GOPATH)/bin
 
 build:
 	cd racing && go build -o racing .
@@ -25,3 +27,7 @@ clean:
 
 test:
 	cd racing && go test ./... -v
+
+kill:
+	-lsof -ti :9000 | xargs kill -9 2>/dev/null
+	-lsof -ti :8000 | xargs kill -9 2>/dev/null
