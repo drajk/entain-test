@@ -28,6 +28,10 @@ clean:
 test:
 	cd racing && go test ./... -v
 
+lint:
+	cd racing && golangci-lint run ./...
+	cd api && golangci-lint run ./...
+
 kill:
 	-lsof -ti :9000 | xargs kill -9 2>/dev/null
 	-lsof -ti :8000 | xargs kill -9 2>/dev/null

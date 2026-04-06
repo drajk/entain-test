@@ -120,28 +120,40 @@ func TestApplyFilter_Ordering(t *testing.T) {
 	}
 }
 
-func TestList_DerivedStatus(t *testing.T) {
-	// set up in-memory DB with some test data
-	db, _ := sql.Open("sqlite3", ":memory:")
+// newTestDB spins up an in-memory SQLite with the races schema.
+func newTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db, err := sql.Open("sqlite3", ":memory:")
+	assert.NoError(t, err)
+	_, err = db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
+	assert.NoError(t, err)
+	return db
+}
 
-	db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
-	db.Exec(`INSERT INTO races VALUES (1,1,'Past Race',1,1,?)`, time.Now().Add(-1*time.Hour).Format(time.RFC3339))
-	db.Exec(`INSERT INTO races VALUES (2,1,'Future Race',1,1,?)`, time.Now().Add(1*time.Hour).Format(time.RFC3339))
+func insertRace(t *testing.T, db *sql.DB, id int, name string, startTime time.Time) {
+	t.Helper()
+	_, err := db.Exec(`INSERT INTO races VALUES (?,1,?,1,1,?)`, id, name, startTime.Format(time.RFC3339))
+	assert.NoError(t, err)
+}
+
+func TestList_DerivedStatus(t *testing.T) {
+	db := newTestDB(t)
+	insertRace(t, db, 1, "Past Race", time.Now().Add(-1*time.Hour))
+	insertRace(t, db, 2, "Future Race", time.Now().Add(1*time.Hour))
 
 	repo := &racesRepo{db: db}
 	races, err := repo.List(&racing.ListRacesRequestFilter{})
 	assert.NoError(t, err)
 	assert.Len(t, races, 2)
 
-	// First race is past → CLOSED, second is future → OPEN (default order is by advertised_start_time ASC)
+	// Default order is advertised_start_time ASC, so past comes first.
 	assert.Equal(t, racing.RaceStatus_CLOSED, races[0].Status)
 	assert.Equal(t, racing.RaceStatus_OPEN, races[1].Status)
 }
 
 func TestGet_Found(t *testing.T) {
-	db, _ := sql.Open("sqlite3", ":memory:")
-	db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
-	db.Exec(`INSERT INTO races VALUES (1,1,'Test Race',3,1,?)`, time.Now().Add(1*time.Hour).Format(time.RFC3339))
+	db := newTestDB(t)
+	insertRace(t, db, 1, "Test Race", time.Now().Add(1*time.Hour))
 
 	repo := &racesRepo{db: db}
 	race, err := repo.Get(1)
@@ -151,8 +163,7 @@ func TestGet_Found(t *testing.T) {
 }
 
 func TestGet_NotFound(t *testing.T) {
-	db, _ := sql.Open("sqlite3", ":memory:")
-	db.Exec(`CREATE TABLE races (id INTEGER PRIMARY KEY, meeting_id INT, name TEXT, number INT, visible INT, advertised_start_time DATETIME)`)
+	db := newTestDB(t)
 
 	repo := &racesRepo{db: db}
 	race, err := repo.Get(999)

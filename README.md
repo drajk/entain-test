@@ -125,6 +125,7 @@ Added a `Makefile` and `.vscode/launch.json` to speed things up for local develo
 make build      # builds both binaries
 make run        # spins up both services (backgrounded)
 make test       # runs tests across all services
+make lint       # runs golangci-lint across all services
 make proto      # re-generates proto files
 make clean      # removes built binaries
 ```
