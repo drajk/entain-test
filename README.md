@@ -10,6 +10,8 @@ Please treat the services provided as if they would live in a real-world environ
 - `racing`: A very bare-bones racing service.
 - `sports`: A minimal (racing inspired) sports events service.
 
+> For a summary of changes from the initial commit, design decisions, and production readiness notes, see [NOTES.md](NOTES.md).
+
 ```
 entain/
 ├─ api/
@@ -72,6 +74,39 @@ curl -X "POST" "http://localhost:8000/v1/list-races" \
      -d $'{
   "filter": {}
 }'
+```
+
+### Available Endpoints
+
+**Racing** (via gateway on `:8000`, racing service on `:9000`)
+
+```bash
+# List all races
+curl -X POST http://localhost:8000/v1/list-races \
+  -H 'Content-Type: application/json' \
+  -d '{"filter": {}}'
+
+# Visible only, sorted by name descending
+curl -X POST http://localhost:8000/v1/list-races \
+  -H 'Content-Type: application/json' \
+  -d '{"filter": {"visible_only": true, "sort_by": "name", "sort_direction": "DESC"}}'
+
+# Get a single race
+curl http://localhost:8000/v1/races/1
+```
+
+**Sports** (via gateway on `:8000`, sports service on `:9001`)
+
+```bash
+# List all events
+curl -X POST http://localhost:8000/v1/sports/events \
+  -H 'Content-Type: application/json' \
+  -d '{"filter": {}}'
+
+# Visible only
+curl -X POST http://localhost:8000/v1/sports/events \
+  -H 'Content-Type: application/json' \
+  -d '{"filter": {"visible_only": true}}'
 ```
 
 ### Changes/Updates Required
